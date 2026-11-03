@@ -1,22 +1,26 @@
 // ==============================================================
 // SERVICE WORKER — APP CLIENTES GPL (PWA INSTALABLE SIN BORDES)
 // ==============================================================
-const CACHE_NAME = 'gpl-clientes-pwa-v3';
+const CACHE_NAME = 'gpl-clientes-pwa-v4';
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.json',
-  './LOGO-gpl.png',
-  './icon-192.png',
-  './icon-512.png'
+  'index.html',
+  'styles.css',
+  'app.js',
+  'manifest.json',
+  'LOGO-gpl.png',
+  'icon-192.png',
+  'icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+    caches.open(CACHE_NAME).then((cache) => {
+      // Cachea individualmente para que ningún fallo puntual bloquee la activación del SW
+      return Promise.allSettled(
+        ASSETS_TO_CACHE.map((url) => cache.add(url))
+      );
+    })
   );
 });
 
@@ -37,13 +41,23 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  // Para navegación principal (abrir la app instalada), responde siempre con index.html
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('index.html'))
+    );
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        const clone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, clone);
-        });
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clone);
+          });
+        }
         return networkResponse;
       })
       .catch(() => caches.match(event.request))

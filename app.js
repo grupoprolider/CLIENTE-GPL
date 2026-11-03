@@ -336,6 +336,10 @@ let deferredPwaPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPwaPrompt = e;
+  const cta = document.getElementById('pwaBannerCta');
+  const sub = document.getElementById('pwaBannerSub');
+  if (cta) cta.textContent = 'Instalar ya';
+  if (sub) sub.textContent = 'Lista para instalar con 1 toque sin bordes de Google';
 });
 
 window.addEventListener('appinstalled', () => {
@@ -344,26 +348,54 @@ window.addEventListener('appinstalled', () => {
   const headerBtn = document.getElementById('btnInstallPwaHeader');
   if (loginBtn) loginBtn.classList.add('hidden');
   if (headerBtn) headerBtn.classList.add('hidden');
-  showToast('🎉 ¡App Clientes GPL instalada en tu teléfono!');
+  showToast('🎉 ¡App Clientes GPL instalada! Buscala en tu pantalla de inicio o cajón de apps.');
 });
 
-function triggerInstallPWA() {
+async function triggerInstallPWA() {
   if (deferredPwaPrompt) {
-    deferredPwaPrompt.prompt();
-    deferredPwaPrompt.userChoice.then((choice) => {
+    try {
+      deferredPwaPrompt.prompt();
+      const choice = await deferredPwaPrompt.userChoice;
       if (choice.outcome === 'accepted') {
         showToast('📲 Instalando App Clientes GPL...');
       }
       deferredPwaPrompt = null;
-    });
-  } else {
-    openModal('modalInstallPWA');
+      return;
+    } catch (err) {
+      deferredPwaPrompt = null;
+    }
+  }
+  openModal('modalInstallPWA');
+}
+
+async function resetAndReloadPWA() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        await reg.unregister();
+      }
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      for (const k of keys) {
+        await caches.delete(k);
+      }
+    }
+    showToast('🔄 Instalador limpio. Recargando...');
+    setTimeout(() => {
+      window.location.reload();
+    }, 900);
+  } catch (e) {
+    window.location.reload();
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+      reg.update();
+    }).catch(() => {});
   }
   lucide.createIcons();
   renderAllDynamicViews();

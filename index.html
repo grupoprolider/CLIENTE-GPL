@@ -151,11 +151,11 @@
             <div class="pwa-install-left">
               <img src="icon-192.png" alt="App GPL" />
               <div>
-                <strong>📲 Instalar App GPL en tu celular</strong>
-                <span>Abre directo desde tu pantalla sin barras de Google</span>
+                <strong id="pwaBannerTitle">📲 Instalar App GPL en tu celular</strong>
+                <span id="pwaBannerSub">Abre directo desde tu pantalla sin barras de Google</span>
               </div>
             </div>
-            <span class="pwa-install-cta">Instalar</span>
+            <span class="pwa-install-cta" id="pwaBannerCta">Instalar</span>
           </button>
 
           <div class="login-quick-help">
@@ -924,22 +924,24 @@
             <div class="pwa-guide-card">
               <strong>🤖 En Android (Google Chrome):</strong>
               <ol>
-                <li>Tocá el menú de <strong>3 puntitos (⋮)</strong> arriba a la derecha en Chrome.</li>
-                <li>Elegí <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</li>
-                <li>Confirmá tocando <strong>Instalar</strong> y abrila desde el ícono <strong>GPL Clientes</strong> en tu celular.</li>
+                <li>Tocá los <strong>3 puntitos (⋮)</strong> arriba a la derecha en Chrome.</li>
+                <li>Si te dice <strong>"Abrir en GPL Clientes"</strong>, tocalo directo (significa que Chrome ya la instaló en tu cajón de apps).</li>
+                <li>Si no, elegí <strong>"Agregar a la pantalla principal"</strong> → <strong>"Instalar"</strong> o <strong>"Crear acceso directo"</strong>.</li>
               </ol>
             </div>
 
             <div class="pwa-guide-card">
               <strong>🍎 En iPhone (Safari):</strong>
               <ol>
-                <li>Tocá el botón <strong>Compartir (cuadrado con flecha hacia arriba)</strong> en la barra inferior.</li>
-                <li>Deslizá y tocá <strong>"Agregar a Inicio"</strong>.</li>
-                <li>Tocá <strong>Agregar</strong> arriba a la derecha y abrila desde su ícono en tu iPhone.</li>
+                <li>Tocá el botón <strong>Compartir (cuadrado con flecha hacia arriba)</strong> abajo en Safari.</li>
+                <li>Elegí <strong>"Agregar a Inicio"</strong> y confirmá tocando <strong>Agregar</strong>.</li>
               </ol>
             </div>
           </div>
 
+          <button type="button" class="btn-outline-teal btn-block" style="margin-bottom:8px" onclick="resetAndReloadPWA()">
+            🔄 Reparar / Reiniciar Instalador PWA
+          </button>
           <button type="button" class="btn-primary btn-block" onclick="closeModal('modalInstallPWA')">
             ¡Entendido!
           </button>
