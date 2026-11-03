@@ -351,7 +351,7 @@
               <div class="tracker-box-header">
                 <div>
                   <span class="sub-label">SEGUIMIENTO DE TU LENTE</span>
-                  <h3>Armazón Milano Noir + Cristales Antirreflex</h3>
+                  <h3 id="opticaSelectedFrameTitle">Armazón Milano Noir + Cristales Antirreflex</h3>
                 </div>
                 <span class="order-code">#OPT-884</span>
               </div>
@@ -361,7 +361,7 @@
                   <div class="step-circle"><i data-lucide="check"></i></div>
                   <div class="step-text">
                     <strong>1. Selección de armazón y receta médica</strong>
-                    <span>Receta validada (+1.75 / +1.50)</span>
+                    <span id="opticaStep1Desc">Receta validada (+1.75 / +1.50)</span>
                   </div>
                 </div>
                 <div class="step-item done">
@@ -378,6 +378,25 @@
                     <span>Disponible en Sucursal GPL Centro (Lun a Vie 9 a 18 hs)</span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- SECCIÓN: MI RECETA OFTALMOLÓGICA DIGITAL GUARDADA -->
+            <div class="prescription-vault-card">
+              <div class="prescription-vault-header">
+                <div class="vault-title-group">
+                  <div class="vault-icon"><i data-lucide="file-check-2"></i></div>
+                  <div>
+                    <span class="sub-label">DOCUMENTACIÓN DIGITAL GPL VISIÓN</span>
+                    <h4>Mi Receta Oftalmológica Guardada</h4>
+                  </div>
+                </div>
+                <button class="btn-burgundy-sm" onclick="openRecetaModal()">
+                  <i data-lucide="camera" class="icon-xs"></i> Subir / Actualizar
+                </button>
+              </div>
+              <div id="savedRecetaContainer" class="saved-receta-body">
+                <!-- Poblado dinámicamente por JS -->
               </div>
             </div>
 
@@ -407,19 +426,13 @@
               <p>Comprobá que se te debitó tu cuota para no perder los servicios y calcular la habilitación por carencias.</p>
             </div>
 
-            <!-- Resumen Plan Flex del Grupo Familiar -->
+            <!-- Resumen Plan Flex del Grupo Familiar (Calculado dinámicamente según Adherentes) -->
             <div class="billing-summary-card">
-              <div class="billing-row">
-                <span>Titular (18 a 75 años)</span>
-                <strong>$50.000</strong>
-              </div>
-              <div class="billing-row">
-                <span>1x Adherente 1 (14 a 75 años)</span>
-                <strong>$40.000</strong>
-              </div>
-              <div class="billing-row">
-                <span>1x Adherente 2 (Menor a 14 / Mayor a 75)</span>
-                <strong>$30.000</strong>
+              <div id="billingBreakdownRows">
+                <div class="billing-row">
+                  <span>Titular (18 a 75 años)</span>
+                  <strong>$50.000</strong>
+                </div>
               </div>
               <div class="billing-divider"></div>
               <div class="billing-total">
@@ -427,7 +440,7 @@
                   <span>Total Mensual Plan Flex</span>
                   <small>CBU Único Titular: •••• 4910 (BNA)</small>
                 </div>
-                <span class="total-amount">$120.000</span>
+                <span class="total-amount" id="billingTotalAmount">$120.000</span>
               </div>
             </div>
 
@@ -446,7 +459,7 @@
                     <p>Con el costo financiero asumido de Mercado Pago. Acreditación inmediata.</p>
                   </div>
                 </div>
-                <button class="btn-primary btn-block" onclick="openModal('modalPagoMP')">
+                <button class="btn-primary btn-block" id="btnOpenMP" onclick="openModal('modalPagoMP')">
                   Abonar con Mercado Pago ($120.000 + costo MP)
                 </button>
               </div>
@@ -460,7 +473,7 @@
                     <p>Generá la solicitud DEBIN bancaria para aceptar el débito desde tu Home Banking.</p>
                   </div>
                 </div>
-                <button class="btn-outline-teal btn-block" onclick="openModal('modalDebin')">
+                <button class="btn-outline-teal btn-block" id="btnOpenDebin" onclick="openModal('modalDebin')">
                   Autogestionar DEBIN ($120.000)
                 </button>
               </div>
@@ -474,8 +487,8 @@
                     <p>Solicitá a GPL que procese el cobro de tu cuota sin recargo adicional.</p>
                   </div>
                 </div>
-                <button class="btn-burgundy-outline btn-block" onclick="solicitarCobroSinCosto()">
-                  Solicitar un Cobro (Sin Costo)
+                <button class="btn-burgundy-outline btn-block" id="btnSolicitarCobro" onclick="solicitarCobroSinCosto()">
+                  Solicitar un Cobro Sin Costo ($120.000)
                 </button>
               </div>
             </div>
@@ -551,7 +564,16 @@
                 <i data-lucide="user-plus" class="icon-xs"></i> Agregar
               </button>
             </div>
-            <p class="helper-note">Plan Flex: Sin límite de Adherentes 1 ($40.000 • 14 a 75 años) ni Adherentes 2 ($30.000 • Menores a 14 y mayores a 75 años).</p>
+            <p class="helper-note">Plan Flex: Titular ($50.000) • Adherente 1 ($40.000 de 14 a 75 años) • Adherente 2 ($30.000 menores a 14 y mayores a 75 años).</p>
+
+            <!-- Barra en vivo de cuota actual según adherentes -->
+            <div class="cac-live-total-bar">
+              <div>
+                <span>Cuota Mensual Total actualizada:</span>
+                <small id="cacAdherentesCountLabel">Titular + 2 adherentes</small>
+              </div>
+              <strong id="cacTotalAmountBadge">$120.000</strong>
+            </div>
 
             <div id="adherentesList" class="adherentes-list">
               <!-- Poblado por JS -->
@@ -726,18 +748,18 @@
           <div class="mp-breakdown">
             <div class="mp-row">
               <span>Cuota Mensual Plan Flex</span>
-              <strong>$120.000</strong>
+              <strong id="mpBaseAmount">$120.000</strong>
             </div>
             <div class="mp-row fee">
               <span>Costo financiero Mercado Pago (6,5%)</span>
-              <strong>$7.800</strong>
+              <strong id="mpFeeAmount">$7.800</strong>
             </div>
             <div class="mp-total">
               <span>Total a abonar</span>
-              <strong>$127.800</strong>
+              <strong id="mpFinalAmount">$127.800</strong>
             </div>
           </div>
-          <button class="btn-primary btn-block" onclick="confirmarPagoDemo('Mercado Pago ($127.800)')">
+          <button class="btn-primary btn-block" id="btnConfirmMP" onclick="confirmarPagoDemo('Mercado Pago')">
             Pagar con Mercado Pago
           </button>
         </div>
@@ -758,12 +780,70 @@
             </div>
             <div class="mp-row">
               <span>Importe de la cuota</span>
-              <strong>$120.000</strong>
+              <strong id="debinBaseAmount">$120.000</strong>
             </div>
           </div>
-          <button class="btn-primary btn-block" onclick="confirmarPagoDemo('DEBIN Bancario ($120.000)')">
+          <button class="btn-primary btn-block" id="btnConfirmDebin" onclick="confirmarPagoDemo('DEBIN Bancario')">
             Generar mi DEBIN Ahora
           </button>
+        </div>
+      </div>
+
+      <!-- Modal: Subir / Guardar Receta Oftalmológica Digital + Selección de Lente -->
+      <div id="modalRecetaOptica" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3 id="recetaModalTitle">Subir Receta Oftalmológica</h3>
+            <button class="close-btn" onclick="closeModal('modalRecetaOptica')"><i data-lucide="x"></i></button>
+          </div>
+          <p class="modal-desc" id="recetaModalSubtitle">Sacale una foto o adjuntá tu receta médica para que quede guardada digitalmente en tu perfil GPL Visión.</p>
+
+          <form onsubmit="guardarRecetaDigital(event)">
+            <div class="form-group">
+              <label>Armazón Seleccionado</label>
+              <input type="text" id="recetaArmazonInput" value="Milano Noir (Recetado)" readonly class="input-disabled" />
+            </div>
+
+            <!-- Botón de carga de foto / cámara en celular -->
+            <div class="form-group">
+              <label>Foto o Archivo de la Receta Médica</label>
+              <label for="recetaFileInput" class="upload-dropzone">
+                <i data-lucide="camera"></i>
+                <strong id="uploadDropTitle">Tomar foto con la cámara o elegir imagen</strong>
+                <span id="uploadDropHint">Formatos aceptados: JPG, PNG o PDF • Queda guardada en tu App</span>
+              </label>
+              <input type="file" id="recetaFileInput" accept="image/*,.pdf" capture="environment" class="hidden" onchange="handleRecetaFileChange(event)" />
+            </div>
+
+            <!-- Vista previa de la foto subida -->
+            <div id="recetaPreviewBox" class="receta-preview-box hidden">
+              <img id="recetaPreviewImg" src="" alt="Vista previa de receta" />
+              <div class="receta-preview-meta">
+                <strong id="recetaFileName">receta_medica.jpg</strong>
+                <span>Lista para guardar en tu legajo digital GPL</span>
+              </div>
+            </div>
+
+            <div class="graduacion-grid">
+              <div class="form-group">
+                <label>Graduación Ojo Derecho (OD)</label>
+                <input type="text" id="recetaOD" value="+1.75 esf" placeholder="Ej: +1.75 / -2.00" required />
+              </div>
+              <div class="form-group">
+                <label>Graduación Ojo Izquierdo (OI)</label>
+                <input type="text" id="recetaOI" value="+1.50 esf" placeholder="Ej: +1.50 / -1.75" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Médico Oftalmólogo / Observaciones</label>
+              <input type="text" id="recetaDoctor" value="Dr. Ricardo Méndez (M.P. 41892) • Cristales Antirreflex" placeholder="Nombre del profesional o detalle de cristales" />
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">
+              <i data-lucide="save"></i> Guardar Receta Digital y Confirmar Lente
+            </button>
+          </form>
         </div>
       </div>
 

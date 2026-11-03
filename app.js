@@ -99,9 +99,18 @@ const state = {
   currentServiceFilter: 'all',
   currentCatalogFilter: 'todos',
   adherentes: [
-    { id: 1, nombre: 'Laura Fernández', dni: '36.112.980', edad: 38, tipo: 'Adherente 1 (14 a 75 años)', costo: '$40.000', cobertura: 'Protección GPL, Telemedicina, GPL Med' },
-    { id: 2, nombre: 'Mateo Gómez', dni: '52.410.332', edad: 9, tipo: 'Adherente 2 (<14 o >75 años)', costo: '$30.000', cobertura: 'AEF, Telemedicina, GPL Med' }
+    { id: 1, nombre: 'Laura Fernández', dni: '36.112.980', edad: 38, tipo: 'Adherente 1 (14 a 75 años)', monto: 40000, costo: '$40.000', cobertura: 'Protección GPL, Telemedicina, GPL Med' },
+    { id: 2, nombre: 'Mateo Gómez', dni: '52.410.332', edad: 9, tipo: 'Adherente 2 (<14 o >75 años)', monto: 30000, costo: '$30.000', cobertura: 'AEF, Telemedicina, GPL Med' }
   ],
+  recetaDigital: {
+    armazon: 'Milano Noir',
+    od: '+1.75 esf',
+    oi: '+1.50 esf',
+    profesional: 'Dr. Ricardo Méndez (M.P. 41892) • Cristales Antirreflex',
+    fechaCarga: '28/10/2026',
+    archivoNombre: 'receta_oftalmologica_gpl.jpg',
+    imagenDataUrl: ''
+  },
   notificacionesBase: [
     {
       id: 101,
@@ -327,9 +336,84 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAllDynamicViews();
 });
 
+function formatARS(num) {
+  return '$' + Number(num || 0).toLocaleString('es-AR');
+}
+
+function getCuotaTotalMensual() {
+  const baseTitular = 50000;
+  const sumaAdherentes = state.adherentes.reduce((acc, a) => acc + (a.monto || (a.edad >= 14 && a.edad <= 75 ? 40000 : 30000)), 0);
+  return baseTitular + sumaAdherentes;
+}
+
+function updateBillingCalculations() {
+  const total = getCuotaTotalMensual();
+  const feeMP = Math.round(total * 0.065);
+  const totalMP = total + feeMP;
+
+  // 1. Desglose en vista Pagos
+  const rowsContainer = document.getElementById('billingBreakdownRows');
+  if (rowsContainer) {
+    const adhRows = state.adherentes.map(a => {
+      const esAdh1 = a.edad >= 14 && a.edad <= 75;
+      const catLabel = esAdh1 ? 'Adherente 1' : 'Adherente 2';
+      return `
+        <div class="billing-row">
+          <span>${catLabel}: ${a.nombre} (${a.edad} años)</span>
+          <strong>${formatARS(a.monto)}</strong>
+        </div>
+      `;
+    }).join('');
+
+    rowsContainer.innerHTML = `
+      <div class="billing-row">
+        <span>Titular: ${state.perfilActual.nombre} (18 a 75 años)</span>
+        <strong>$50.000</strong>
+      </div>
+      ${adhRows}
+    `;
+  }
+
+  // 2. Totales en tarjetas y botones de Pagos
+  const billingTotalEl = document.getElementById('billingTotalAmount');
+  if (billingTotalEl) billingTotalEl.textContent = formatARS(total);
+
+  const btnOpenMP = document.getElementById('btnOpenMP');
+  if (btnOpenMP) btnOpenMP.textContent = `Abonar con Mercado Pago (${formatARS(total)} + costo MP)`;
+
+  const btnOpenDebin = document.getElementById('btnOpenDebin');
+  if (btnOpenDebin) btnOpenDebin.textContent = `Autogestionar DEBIN (${formatARS(total)})`;
+
+  const btnSolicitarCobro = document.getElementById('btnSolicitarCobro');
+  if (btnSolicitarCobro) btnSolicitarCobro.textContent = `Solicitar un Cobro Sin Costo (${formatARS(total)})`;
+
+  // 3. Modales de Mercado Pago y DEBIN
+  const mpBase = document.getElementById('mpBaseAmount');
+  const mpFee = document.getElementById('mpFeeAmount');
+  const mpFinal = document.getElementById('mpFinalAmount');
+  const debinBase = document.getElementById('debinBaseAmount');
+  if (mpBase) mpBase.textContent = formatARS(total);
+  if (mpFee) mpFee.textContent = formatARS(feeMP);
+  if (mpFinal) mpFinal.textContent = formatARS(totalMP);
+  if (debinBase) debinBase.textContent = formatARS(total);
+
+  // 4. Barra de total en vivo en pestaña CAC
+  const cacTotalBadge = document.getElementById('cacTotalAmountBadge');
+  const cacCountLabel = document.getElementById('cacAdherentesCountLabel');
+  if (cacTotalBadge) cacTotalBadge.textContent = formatARS(total);
+  if (cacCountLabel) {
+    const n = state.adherentes.length;
+    cacCountLabel.textContent = n === 0
+      ? 'Solo Titular ($50.000)'
+      : `Titular ($50.000) + ${n} ${n === 1 ? 'adherente' : 'adherentes'}`;
+  }
+}
+
 function renderAllDynamicViews() {
+  updateBillingCalculations();
   updateHeaderAndHome();
   renderServicesList();
+  renderSavedReceta();
   renderCatalog();
   renderPaymentHistory();
   renderAdherentes();
@@ -502,8 +586,8 @@ function updateHeaderAndHome() {
     tag.textContent = `SERVICIOS ACTIVOS • USUARIO ${p.key.toUpperCase()}`;
     title.textContent = `${c} ${c === 1 ? 'Cuota Paga Acreditada' : 'Cuotas Pagas Acreditadas'}`;
     desc.textContent = c >= 6
-      ? '¡Tenés el 100% de los servicios de GPL Med, Visión, Protección y AEF habilitados!'
-      : 'Tu débito mensual ingresó correctamente y no perdiste la continuidad de tus servicios.';
+      ? `Cuota actual: ${formatARS(getCuotaTotalMensual())}/mes • ¡Tenés el 100% de los servicios habilitados!`
+      : `Tu débito mensual (${formatARS(getCuotaTotalMensual())}) ingresó correctamente y mantenés tus servicios activos.`;
 
     if (opticaBadge) {
       if (c >= 2) {
@@ -580,8 +664,104 @@ function renderServicesList() {
 }
 
 // ==============================================================
-// CATÁLOGO DE ÓPTICA
+// CATÁLOGO DE ÓPTICA Y RECETA OFTALMOLÓGICA DIGITAL GUARDADA
 // ==============================================================
+function renderSavedReceta() {
+  const container = document.getElementById('savedRecetaContainer');
+  if (!container) return;
+
+  const r = state.recetaDigital;
+  const frameTitle = document.getElementById('opticaSelectedFrameTitle');
+  const step1Desc = document.getElementById('opticaStep1Desc');
+
+  if (frameTitle) frameTitle.textContent = `Armazón ${r.armazon} + Cristales Recetados`;
+  if (step1Desc) step1Desc.textContent = `Receta digital guardada (OD ${r.od} / OI ${r.oi})`;
+
+  const thumbHtml = r.imagenDataUrl
+    ? `<img src="${r.imagenDataUrl}" alt="Receta Digital" />`
+    : `<i data-lucide="file-text" style="width:22px;height:22px;color:#093642;margin-bottom:3px"></i><span>RECETA<br/>DIGITAL</span>`;
+
+  container.innerHTML = `
+    <div class="receta-digital-card">
+      <div class="receta-thumb" onclick="openRecetaModal()" style="cursor:pointer" title="Ver o cambiar receta">
+        ${thumbHtml}
+      </div>
+      <div class="receta-details">
+        <strong>${r.archivoNombre}</strong>
+        <span>${r.profesional}</span>
+        <div class="receta-badges-row">
+          <span class="receta-pill valid">✓ Guardada (${r.fechaCarga})</span>
+          <span class="receta-pill">OD: ${r.od}</span>
+          <span class="receta-pill">OI: ${r.oi}</span>
+          <span class="receta-pill">Armazón: ${r.armazon}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openRecetaModal(nombreArmazon) {
+  if (nombreArmazon) {
+    state.recetaDigital.armazon = nombreArmazon;
+  }
+  const armInput = document.getElementById('recetaArmazonInput');
+  if (armInput) armInput.value = `${state.recetaDigital.armazon} (Seleccionado en Catálogo)`;
+
+  const odInput = document.getElementById('recetaOD');
+  const oiInput = document.getElementById('recetaOI');
+  const docInput = document.getElementById('recetaDoctor');
+  if (odInput) odInput.value = state.recetaDigital.od;
+  if (oiInput) oiInput.value = state.recetaDigital.oi;
+  if (docInput) docInput.value = state.recetaDigital.profesional;
+
+  openModal('modalRecetaOptica');
+}
+
+function handleRecetaFileChange(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  state.recetaDigital.archivoNombre = file.name;
+  const fileNameEl = document.getElementById('recetaFileName');
+  const previewBox = document.getElementById('recetaPreviewBox');
+  const previewImg = document.getElementById('recetaPreviewImg');
+  const dropTitle = document.getElementById('uploadDropTitle');
+
+  if (fileNameEl) fileNameEl.textContent = file.name;
+  if (dropTitle) dropTitle.textContent = `Archivo cargado: ${file.name}`;
+
+  if (file.type && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      state.recetaDigital.imagenDataUrl = evt.target.result;
+      if (previewImg) previewImg.src = evt.target.result;
+      if (previewBox) previewBox.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+  } else {
+    state.recetaDigital.imagenDataUrl = '';
+    if (previewBox) previewBox.classList.remove('hidden');
+  }
+}
+
+function guardarRecetaDigital(e) {
+  e.preventDefault();
+  const od = document.getElementById('recetaOD').value.trim();
+  const oi = document.getElementById('recetaOI').value.trim();
+  const prof = document.getElementById('recetaDoctor').value.trim();
+
+  state.recetaDigital.od = od || '+1.75 esf';
+  state.recetaDigital.oi = oi || '+1.50 esf';
+  state.recetaDigital.profesional = prof || 'Receta Oftalmológica Validada';
+
+  const hoy = new Date();
+  state.recetaDigital.fechaCarga = hoy.toLocaleDateString('es-AR');
+
+  closeModal('modalRecetaOptica');
+  renderAllDynamicViews();
+  showToast(`✅ Receta digital guardada junto a tu armazón "${state.recetaDigital.armazon}".`);
+}
+
 function filterCatalog(tipo, btnEl) {
   state.currentCatalogFilter = tipo;
   document.querySelectorAll('.catalog-filters .cat-chip').forEach(b => b.classList.remove('active'));
@@ -597,28 +777,31 @@ function renderCatalog() {
     state.currentCatalogFilter === 'todos' ? true : item.tipo === state.currentCatalogFilter
   );
 
-  grid.innerHTML = items.map(item => `
-    <div class="frame-card">
-      <div class="frame-visual">
-        <span class="frame-tag">${item.etiqueta}</span>
-        <svg class="frame-svg" viewBox="0 0 120 45" fill="none" stroke="${item.color}" stroke-width="4">
-          <rect x="8" y="8" width="42" height="28" rx="10" fill="rgba(255,255,255,0.6)"/>
-          <rect x="70" y="8" width="42" height="28" rx="10" fill="rgba(255,255,255,0.6)"/>
-          <path d="M50 18 Q60 12 70 18" />
-          <path d="M2 16 L8 14" />
-          <path d="M112 14 L118 16" />
-        </svg>
+  grid.innerHTML = items.map(item => {
+    const isSelected = state.recetaDigital.armazon === item.nombre;
+    return `
+      <div class="frame-card" style="${isSelected ? 'border: 2px solid #73174E;' : ''}">
+        <div class="frame-visual">
+          <span class="frame-tag">${item.etiqueta}</span>
+          <svg class="frame-svg" viewBox="0 0 120 45" fill="none" stroke="${item.color}" stroke-width="4">
+            <rect x="8" y="8" width="42" height="28" rx="10" fill="rgba(255,255,255,0.6)"/>
+            <rect x="70" y="8" width="42" height="28" rx="10" fill="rgba(255,255,255,0.6)"/>
+            <path d="M50 18 Q60 12 70 18" />
+            <path d="M2 16 L8 14" />
+            <path d="M112 14 L118 16" />
+          </svg>
+        </div>
+        <div class="frame-info">
+          <h4>${item.nombre}</h4>
+          <p>${item.material}</p>
+        </div>
+        <div class="frame-cov">100% Cubierto (Tope $127.500)</div>
+        <button class="btn-primary btn-block" style="padding:8px; font-size:12px" onclick="seleccionarLente('${item.nombre}')">
+          ${isSelected ? '✓ Seleccionado (Subir Receta)' : 'Elegir y Subir Receta'}
+        </button>
       </div>
-      <div class="frame-info">
-        <h4>${item.nombre}</h4>
-        <p>${item.material}</p>
-      </div>
-      <div class="frame-cov">100% Cubierto (Tope $127.500)</div>
-      <button class="btn-primary btn-block" style="padding:8px; font-size:12px" onclick="seleccionarLente('${item.nombre}')">
-        Seleccionar Lente
-      </button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function seleccionarLente(nombre) {
@@ -626,7 +809,7 @@ function seleccionarLente(nombre) {
     showToast('⚠️ Anteojos recetados requiere 2 cuotas pagas de carencia.');
     return;
   }
-  showToast(`👓 Lente "${nombre}" seleccionado en tu orden de Óptica GPL.`);
+  openRecetaModal(nombre);
 }
 
 // ==============================================================
@@ -636,6 +819,7 @@ function renderPaymentHistory() {
   const listEl = document.getElementById('paymentHistoryList');
   if (!listEl) return;
 
+  const montoActual = formatARS(getCuotaTotalMensual());
   const c = state.cuotasPagas;
   if (c === 0) {
     listEl.innerHTML = `
@@ -645,7 +829,7 @@ function renderPaymentHistory() {
           <span>Débito rechazado • Falta de pago</span>
         </div>
         <div class="history-right">
-          <strong style="color:#ef4444">$120.000</strong>
+          <strong style="color:#ef4444">${montoActual}</strong>
           <span class="status-pill-lock">Impago</span>
         </div>
       </div>
@@ -663,7 +847,7 @@ function renderPaymentHistory() {
           <span>Débito CBU comprobado • Suma carencia</span>
         </div>
         <div class="history-right">
-          <strong>$120.000</strong>
+          <strong>${montoActual}</strong>
           <span class="status-pill-ok">Debitado OK</span>
         </div>
       </div>
@@ -675,40 +859,133 @@ function renderPaymentHistory() {
 function confirmarPagoDemo(metodo) {
   closeModal('modalPagoMP');
   closeModal('modalDebin');
+  const total = getCuotaTotalMensual();
+  const importe = metodo.includes('Mercado Pago')
+    ? formatARS(total + Math.round(total * 0.065))
+    : formatARS(total);
   state.cuotasPagas += 1;
   renderAllDynamicViews();
-  showToast(`✅ Pago acreditado vía ${metodo}. ¡Ahora tenés ${state.cuotasPagas} cuota(s) paga(s)!`);
+  showToast(`✅ Pago de ${importe} acreditado vía ${metodo}. ¡Ahora tenés ${state.cuotasPagas} cuota(s)!`);
 }
 
 function solicitarCobroSinCosto() {
-  showToast('📩 Solicitud de cobro SIN COSTO enviada a Cobranzas GPL.');
+  showToast(`📩 Solicitud de cobro SIN COSTO por ${formatARS(getCuotaTotalMensual())} enviada a Cobranzas GPL.`);
 }
 
 // ==============================================================
-// CAC: MODIFICACIÓN DE DATOS Y ADHERENTES
+// CAC: MODIFICACIÓN DE DATOS Y ADHERENTES (SUMA Y RESTA SEGÚN EDAD)
 // ==============================================================
 function renderAdherentes() {
   const container = document.getElementById('adherentesList');
   if (!container) return;
 
+  if (state.adherentes.length === 0) {
+    container.innerHTML = `
+      <div class="adherente-card">
+        <div class="adherente-info">
+          <strong>Sin adherentes adicionales</strong>
+          <span>Solo se abona la cuota del Titular ($50.000)</span>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = state.adherentes.map(a => `
     <div class="adherente-card">
       <div class="adherente-info">
         <strong>${a.nombre} (${a.edad} años • DNI ${a.dni})</strong>
-        <span>${a.tipo} • ${a.costo}</span>
+        <span>${a.tipo} • <strong>+${formatARS(a.monto)}/mes</strong></span>
       </div>
       <div class="adherente-actions">
-        <button class="btn-icon-mini" onclick="showToast('Solicitud de modificación de ${a.nombre} enviada al CAC')">Modificar</button>
-        <button class="btn-icon-mini danger" onclick="eliminarAdherente(${a.id})">Quitar</button>
+        <button class="btn-icon-mini" onclick="abrirEditarAdherente(${a.id})">Edad / Modificar</button>
+        <button class="btn-icon-mini danger" onclick="eliminarAdherente(${a.id})">Quitar (-${formatARS(a.monto)})</button>
       </div>
     </div>
   `).join('');
 }
 
 function eliminarAdherente(id) {
+  const target = state.adherentes.find(a => a.id === id);
+  const restado = target ? target.monto : 0;
+  const nombre = target ? target.nombre : 'Adherente';
+
   state.adherentes = state.adherentes.filter(a => a.id !== id);
-  renderAdherentes();
-  showToast('Solicitud para quitar adherente enviada al CAC.');
+  renderAllDynamicViews();
+  showToast(`➖ Se quitó a ${nombre}: se restaron ${formatARS(restado)}. Nuevo total: ${formatARS(getCuotaTotalMensual())}`);
+}
+
+function previewCostoPorEdad() {
+  const edadInput = document.getElementById('adhEdad');
+  const previewBox = document.getElementById('adhAgePreview');
+  if (!edadInput || !previewBox) return;
+
+  const val = edadInput.value.trim();
+  if (!val) {
+    previewBox.textContent = 'Ingresá la edad para calcular si suma $40.000 (14 a 75 años) o $30.000 (<14 o >75 años).';
+    return;
+  }
+
+  const edad = Number(val);
+  const esAdh1 = edad >= 14 && edad <= 75;
+  const suma = esAdh1 ? 40000 : 30000;
+  const nuevoTotal = getCuotaTotalMensual() + suma;
+
+  previewBox.innerHTML = esAdh1
+    ? `✅ <strong>${edad} años → Adherente 1 (14 a 75 años):</strong> Suma <strong>+$40.000</strong>. Tu cuota pasará a <strong>${formatARS(nuevoTotal)}</strong>.`
+    : `✅ <strong>${edad} años → Adherente 2 (<14 o >75 años):</strong> Suma <strong>+$30.000</strong>. Tu cuota pasará a <strong>${formatARS(nuevoTotal)}</strong>.`;
+}
+
+function abrirEditarAdherente(id) {
+  const adh = state.adherentes.find(a => a.id === id);
+  if (!adh) return;
+
+  const title = document.getElementById('cacModalTitle');
+  const body = document.getElementById('cacModalBody');
+
+  title.textContent = `Modificar Adherente • ${adh.nombre}`;
+  body.innerHTML = `
+    <p class="modal-desc">Si modificás la edad del adherente, se recalcula automáticamente su categoría (Adherente 1: $40.000 / Adherente 2: $30.000) y el importe total a abonar.</p>
+    <form onsubmit="guardarEdicionAdherente(event, ${adh.id})">
+      <div class="form-group">
+        <label>Nombre y Apellido</label>
+        <input type="text" id="editAdhNombre" value="${adh.nombre}" required />
+      </div>
+      <div class="form-group">
+        <label>DNI del Adherente</label>
+        <input type="text" id="editAdhDni" value="${adh.dni}" required />
+      </div>
+      <div class="form-group">
+        <label>Edad (Recalcula tarifa según rango Plan Flex)</label>
+        <input type="number" id="editAdhEdad" value="${adh.edad}" min="0" max="110" required />
+      </div>
+      <button type="submit" class="btn-primary btn-block">Guardar y Recalcular Importe</button>
+    </form>
+  `;
+  openModal('modalCacForm');
+}
+
+function guardarEdicionAdherente(e, id) {
+  e.preventDefault();
+  const adh = state.adherentes.find(a => a.id === id);
+  if (!adh) return;
+
+  const nombre = document.getElementById('editAdhNombre').value.trim();
+  const dni = document.getElementById('editAdhDni').value.trim();
+  const edad = Number(document.getElementById('editAdhEdad').value);
+  const esAdh1 = edad >= 14 && edad <= 75;
+
+  adh.nombre = nombre;
+  adh.dni = dni;
+  adh.edad = edad;
+  adh.monto = esAdh1 ? 40000 : 30000;
+  adh.costo = formatARS(adh.monto);
+  adh.tipo = esAdh1 ? 'Adherente 1 (14 a 75 años)' : 'Adherente 2 (<14 o >75 años)';
+  adh.cobertura = esAdh1 ? 'Protección GPL, Telemedicina, GPL Med' : 'AEF, Telemedicina, GPL Med';
+
+  closeModal('modalCacForm');
+  renderAllDynamicViews();
+  showToast(`✅ ${nombre} actualizado/a (${adh.costo}). Nuevo total a abonar: ${formatARS(getCuotaTotalMensual())}`);
 }
 
 function openCacForm(tipo) {
@@ -764,7 +1041,7 @@ function openCacForm(tipo) {
   } else if (tipo === 'adherente') {
     title.textContent = 'Agregar Adherente • Plan Flex';
     body.innerHTML = `
-      <p class="modal-desc">Adherente 1 (14 a 75 años: $40.000) • Adherente 2 (Menores a 14 y mayores a 75 años: $30.000).</p>
+      <p class="modal-desc">De acuerdo a la edad que ingreses, se sumará automáticamente <strong>$40.000 (Adherente 1: 14 a 75 años)</strong> o <strong>$30.000 (Adherente 2: menor a 14 o mayor a 75 años)</strong> al importe mensual a abonar.</p>
       <form onsubmit="agregarAdherenteDemo(event)">
         <div class="form-group">
           <label>Nombre y Apellido</label>
@@ -775,10 +1052,13 @@ function openCacForm(tipo) {
           <input type="text" id="adhDni" placeholder="Ej: 48.120.331" required />
         </div>
         <div class="form-group">
-          <label>Edad</label>
-          <input type="number" id="adhEdad" placeholder="Ej: 12" required />
+          <label>Edad del Adherente</label>
+          <input type="number" id="adhEdad" min="0" max="110" placeholder="Ej: 12 o 35" oninput="previewCostoPorEdad()" required />
         </div>
-        <button type="submit" class="btn-primary btn-block">Agregar Adherente</button>
+        <div id="adhAgePreview" class="age-preview-pill">
+          Ingresá la edad para calcular si suma $40.000 (14 a 75 años) o $30.000 (&lt;14 o &gt;75 años).
+        </div>
+        <button type="submit" class="btn-primary btn-block">Agregar y Sumar al Importe</button>
       </form>
     `;
   }
@@ -794,24 +1074,26 @@ function submitCacForm(e, msg) {
 
 function agregarAdherenteDemo(e) {
   e.preventDefault();
-  const nombre = document.getElementById('adhNombre').value;
-  const dni = document.getElementById('adhDni').value;
+  const nombre = document.getElementById('adhNombre').value.trim();
+  const dni = document.getElementById('adhDni').value.trim();
   const edad = Number(document.getElementById('adhEdad').value);
   const esAdh1 = edad >= 14 && edad <= 75;
+  const monto = esAdh1 ? 40000 : 30000;
 
   state.adherentes.push({
     id: Date.now(),
     nombre,
     dni,
     edad,
+    monto,
     tipo: esAdh1 ? 'Adherente 1 (14 a 75 años)' : 'Adherente 2 (<14 o >75 años)',
-    costo: esAdh1 ? '$40.000' : '$30.000',
+    costo: formatARS(monto),
     cobertura: esAdh1 ? 'Protección GPL, Telemedicina, GPL Med' : 'AEF, Telemedicina, GPL Med'
   });
 
   closeModal('modalCacForm');
-  renderAdherentes();
-  showToast(`✅ ${nombre} agregado/a a tu Plan Flex.`);
+  renderAllDynamicViews();
+  showToast(`➕ ${nombre} (${edad} años) sumó +${formatARS(monto)}. Nuevo total a abonar: ${formatARS(getCuotaTotalMensual())}`);
 }
 
 // ==============================================================
