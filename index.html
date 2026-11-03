@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#093642" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GPL Clientes" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="LOGO-gpl.png" />
+  <link rel="icon" type="image/png" href="LOGO-gpl.png" />
+  <title>App Clientes GPL — Grupo Pro Líder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- MARCO DEL TELÉFONO (En celular ocupa el 100% nativo de la pantalla) -->
+  <div class="phone-wrapper">
+    <div class="phone-frame">
+      
+      <!-- Notch & Status Bar (Solo visible en vista escritorio) -->
+      <div class="status-bar desktop-only-bar">
+        <span class="status-time">10:30</span>
+        <div class="status-notch"></div>
+        <div class="status-icons">
+          <i data-lucide="signal" class="icon-xs"></i>
+          <i data-lucide="wifi" class="icon-xs"></i>
+          <i data-lucide="battery-full" class="icon-xs"></i>
+        </div>
+      </div>
+
+      <!-- NOTIFICACIÓN PUSH FLOTANTE -->
+      <div id="pushBanner" class="push-banner hidden" onclick="openNotificationFromPush()">
+        <div class="push-icon">
+          <img src="LOGO-gpl.png" alt="GPL" />
+        </div>
+        <div class="push-content">
+          <div class="push-header">
+            <strong id="pushTitle">GPL Visión • Ahora</strong>
+          </div>
+          <p id="pushText">👓 ¡Tu lente recetado ya está listo para retirar en Sucursal Centro!</p>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           PANTALLA 1: LOGIN (DNI por defecto, Mail o Usuarios Demo)
+           ========================================== -->
+      <section id="screen-login" class="screen active">
+        <div class="login-container">
+          <div class="login-brand">
+            <div class="logo-card">
+              <img src="LOGO-gpl.png" alt="Grupo Pro Líder" class="brand-logo" />
+            </div>
+            <p class="brand-tagline">Somos un grupo que te acompaña</p>
+            <span class="store-badges">Google Play • App Store</span>
+          </div>
+
+          <div class="login-card">
+            <h2>Portal de Clientes</h2>
+            <p class="login-sub">Ingresá con tu DNI de Titular (o usuario de prueba) o cambiá a tu Email</p>
+
+            <!-- Selector de método de usuario -->
+            <div class="login-mode-switch">
+              <button type="button" id="modeDniBtn" class="mode-btn active" onclick="switchLoginMode('dni')">
+                <i data-lucide="id-card"></i> Usuario / DNI
+              </button>
+              <button type="button" id="modeEmailBtn" class="mode-btn" onclick="switchLoginMode('email')">
+                <i data-lucide="mail"></i> Usar mi Email
+              </button>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+              <div id="dniInputGroup" class="form-group">
+                <label>
+                  <span>Usuario / DNI del Titular</span>
+                  <span class="badge-capture">Clave: 1234</span>
+                </label>
+                <div class="input-icon-wrap">
+                  <i data-lucide="user"></i>
+                  <input type="text" id="loginDni" value="cuota2" placeholder="Ej: 34892104 o cuota1" required autocomplete="off" />
+                </div>
+              </div>
+
+              <div id="emailInputGroup" class="form-group hidden">
+                <label>Correo Electrónico <span class="badge-capture">Actualiza tu ficha GPL</span></label>
+                <div class="input-icon-wrap">
+                  <i data-lucide="at-sign"></i>
+                  <input type="email" id="loginEmail" placeholder="tu.nombre@email.com" />
+                </div>
+                <small class="form-help">Al elegir ingresar con tu mail, lo vinculamos a tu DNI y nos quedamos con el dato actualizado.</small>
+              </div>
+
+              <div class="form-group">
+                <label>Clave de acceso</label>
+                <div class="input-icon-wrap">
+                  <i data-lucide="lock"></i>
+                  <input type="password" id="loginPass" value="1234" placeholder="••••" required />
+                </div>
+              </div>
+
+              <button type="submit" class="btn-primary btn-block">
+                Ingresar a mi cuenta <i data-lucide="arrow-right"></i>
+              </button>
+            </form>
+
+            <!-- ACCESO RÁPIDO A USUARIOS DE PRUEBA POR CARENCIA -->
+            <div class="demo-users-box">
+              <div class="demo-users-header">
+                <i data-lucide="users"></i>
+                <span>Perfiles de prueba (Tocá uno para cargar e ingresar):</span>
+              </div>
+              <div class="demo-users-grid">
+                <button type="button" class="demo-user-chip chip-danger" onclick="quickLoginUser('sincuota')">
+                  <strong>sincuota</strong>
+                  <span>0 cuotas • Impago</span>
+                </button>
+                <button type="button" class="demo-user-chip" onclick="quickLoginUser('cuota1')">
+                  <strong>cuota1</strong>
+                  <span>1 cuota • Telemed + AP</span>
+                </button>
+                <button type="button" class="demo-user-chip active" onclick="quickLoginUser('cuota2')">
+                  <strong>cuota2</strong>
+                  <span>2 cuotas • Med + Óptica</span>
+                </button>
+                <button type="button" class="demo-user-chip" onclick="quickLoginUser('cuota3')">
+                  <strong>cuota3</strong>
+                  <span>3 cuotas • Alta Compl.</span>
+                </button>
+                <button type="button" class="demo-user-chip chip-full" onclick="quickLoginUser('cuota6')">
+                  <strong>cuota6</strong>
+                  <span>6 cuotas • Cobertura Total + AEF</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="login-footer-links">
+              <button type="button" class="link-btn" onclick="openModal('modalVincularMail')">
+                <i data-lucide="sparkles"></i> ¿Querés cambiar tu DNI por tu Email?
+              </button>
+            </div>
+          </div>
+
+          <div class="login-quick-help">
+            <span>¿Necesitás asistencia del CAC?</span>
+            <a href="tel:0800555475" class="help-pill"><i data-lucide="phone-call"></i> Llamar al 0800 GPL</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==========================================
+           CONTENEDOR DE LA APP AUTENTICADA
+           ========================================== -->
+      <div id="app-shell" class="app-shell hidden">
+        
+        <!-- CABECERA FIJA -->
+        <header class="app-header">
+          <div class="header-user">
+            <img src="LOGO-gpl.png" alt="GPL" class="header-logo" />
+            <div>
+              <span class="welcome-txt">Hola, <strong id="userNameDisplay">Martín Gómez</strong></span>
+              <span class="plan-badge">Plan Flex • <span id="headerIdDisplay">DNI 34.892.104</span></span>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="icon-btn" onclick="openModal('modalCambiarUsuario')" title="Cambiar usuario de prueba">
+              <i data-lucide="repeat"></i>
+            </button>
+            <button class="icon-btn" onclick="navigateTo('notificaciones')" title="Notificaciones">
+              <i data-lucide="bell"></i>
+              <span id="notifBadge" class="notif-dot">4</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- ÁREA SCROLLABLE DE VISTAS -->
+        <main class="app-content" id="mainScroll">
+
+          <!-- ------------------------------------------
+               VISTA: INICIO (DASHBOARD)
+               ------------------------------------------ -->
+          <section id="view-home" class="app-view active">
+            
+            <!-- Estado de Cuenta & Carencia Resumen -->
+            <div id="statusBanner" class="status-card status-ok">
+              <div class="status-card-top">
+                <div>
+                  <span class="status-label" id="homeStatusTag">SERVICIOS ACTIVOS • AL DÍA</span>
+                  <h3 id="homeCuotasTitle">2 Cuotas Pagas Acreditadas</h3>
+                  <p id="homeCuotasDesc">Tu último débito de $120.000 ingresó correctamente.</p>
+                </div>
+                <div class="status-shield">
+                  <i data-lucide="shield-check"></i>
+                </div>
+              </div>
+              <div class="status-card-actions">
+                <button class="btn-light-sm" onclick="navigateTo('servicios')">Ver mis carencias</button>
+                <button class="btn-light-sm" onclick="navigateTo('pagos')">Comprobantes</button>
+                <button class="btn-light-sm" onclick="triggerPushDemo()">🔔 Probar Push</button>
+              </div>
+            </div>
+
+            <!-- Banner Sugerencia Captura de Email (si entró con DNI) -->
+            <div id="emailCaptureCard" class="email-capture-banner">
+              <div class="email-capture-text">
+                <strong><i data-lucide="mail-plus" class="icon-inline"></i> ¡Cambiar DNI por tu Email!</strong>
+                <p>Elegí ingresar con tu correo y recibí tus comprobantes y alertas al instante.</p>
+              </div>
+              <button class="btn-burgundy-sm" onclick="openModal('modalVincularMail')">Elegir Mail</button>
+            </div>
+
+            <!-- BOTÓN CENTRAL IMPORTANTE: TELEMEDICINA -->
+            <div class="telemed-hero-card">
+              <div class="telemed-badge">IMPORTANTE • 1 CUOTA PAGA (SIN LÍMITE)</div>
+              <div class="telemed-body">
+                <div class="telemed-info">
+                  <h3>Telemedicina GPL 24 hs</h3>
+                  <p>Guardia Clínica Adultos y Pediatría + 13 especialidades programadas.</p>
+                </div>
+                <div class="telemed-icon-circle">
+                  <i data-lucide="video"></i>
+                </div>
+              </div>
+              <div class="telemed-buttons">
+                <button class="btn-telemed-primary" onclick="openModal('modalTelemedicina')">
+                  <i data-lucide="external-link"></i> Plataforma Médica
+                </button>
+                <a href="tel:0800555475" class="btn-telemed-phone">
+                  <i data-lucide="phone"></i> Línea Telemedicina
+                </a>
+              </div>
+            </div>
+
+            <!-- Seguimiento rápido de Lente en Curso -->
+            <div class="quick-tracker-card" onclick="navigateTo('optica')">
+              <div class="tracker-left">
+                <div class="tracker-icon"><i data-lucide="glasses"></i></div>
+                <div>
+                  <span class="tracker-tag">SEGUIMIENTO DE ÓPTICA</span>
+                  <h4>Anteojo Recetado #OPT-884</h4>
+                  <p id="homeOpticaStep">✨ ¡Ya está tu lente listo para retirar en sucursal!</p>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="chevron"></i>
+            </div>
+
+            <!-- Accesos Rápidos a los 3 Pilares GPL -->
+            <div class="section-title-row">
+              <h3>Tu Cobertura GPL</h3>
+              <button class="text-link" onclick="navigateTo('servicios')">Ver topes y carencias</button>
+            </div>
+            <div class="pillars-grid">
+              <div class="pillar-card" onclick="openServiceTab('gplmed')">
+                <div class="pillar-icon bg-teal"><i data-lucide="stethoscope"></i></div>
+                <h4>GPL MED</h4>
+                <p>Turnos, Laboratorio, Rx, Eco y Farmacia</p>
+                <span class="carencia-mini" id="pillMedStatus">2 cuotas</span>
+              </div>
+              <div class="pillar-card" onclick="navigateTo('optica')">
+                <div class="pillar-icon bg-burgundy"><i data-lucide="eye"></i></div>
+                <h4>GPL VISIÓN</h4>
+                <p>Catálogo de Lentes al 100%, Estudios y Cirugía</p>
+                <span class="carencia-mini" id="pillVisionStatus">2 a 3 cuotas</span>
+              </div>
+              <div class="pillar-card" onclick="openServiceTab('proteccion')">
+                <div class="pillar-icon bg-teal"><i data-lucide="shield"></i></div>
+                <h4>PROTECCIÓN</h4>
+                <p>Accidentes, Fracturas, Alta Complejidad y AEF</p>
+                <span class="carencia-mini" id="pillProtStatus">1 a 6 cuotas</span>
+              </div>
+            </div>
+
+            <!-- Valoración de Atención y Servicio + Redes -->
+            <div class="feedback-card">
+              <div class="feedback-header">
+                <div>
+                  <h4>Valoración de Atención y Servicio</h4>
+                  <p>Puntuación sobre la venta y apreciación del servicio que se te ofrece.</p>
+                </div>
+                <i data-lucide="star" class="star-accent"></i>
+              </div>
+              <button class="btn-outline-teal btn-block" onclick="openModal('modalValoracion')">
+                Calificar Venta y Servicio GPL
+              </button>
+            </div>
+
+            <!-- Enlaces Oficiales y Redes de la Empresa -->
+            <div class="social-card">
+              <h4>Redes y Canales de Grupo Pro Líder</h4>
+              <div class="social-links-grid">
+                <a href="https://www.grupoprolider.com.ar" target="_blank" class="social-item">
+                  <i data-lucide="globe"></i>
+                  <span>Web GPL</span>
+                </a>
+                <a href="https://www.grupoprolider.com.ar" target="_blank" class="social-item">
+                  <i data-lucide="instagram"></i>
+                  <span>Instagram</span>
+                </a>
+                <a href="https://www.grupoprolider.com.ar" target="_blank" class="social-item">
+                  <i data-lucide="facebook"></i>
+                  <span>Facebook</span>
+                </a>
+                <a href="tel:0800555475" class="social-item">
+                  <i data-lucide="headphones"></i>
+                  <span>0800 CAC</span>
+                </a>
+              </div>
+            </div>
+
+          </section>
+
+          <!-- ------------------------------------------
+               VISTA: MIS SERVICIOS Y CARENCIAS
+               ------------------------------------------ -->
+          <section id="view-servicios" class="app-view">
+            <div class="view-header-block">
+              <h2>Mis Servicios y Carencias</h2>
+              <p>Habilitación automática calculada según tu historial de cuotas pagas (<strong id="servCuotasCount">2 cuotas</strong>).</p>
+            </div>
+
+            <!-- Filtros por Rubro GPL -->
+            <div class="tabs-pills">
+              <button class="tab-pill active" onclick="filterServices('all', this)">Todos</button>
+              <button class="tab-pill" onclick="filterServices('gplmed', this)">GPL Med</button>
+              <button class="tab-pill" onclick="filterServices('vision', this)">GPL Visión</button>
+              <button class="tab-pill" onclick="filterServices('proteccion', this)">Protección GPL</button>
+            </div>
+
+            <!-- Lista dinámica renderizada por JS -->
+            <div id="servicesListContainer" class="services-list"></div>
+          </section>
+
+          <!-- ------------------------------------------
+               VISTA: ÓPTICA (CATÁLOGO Y SEGUIMIENTO)
+               ------------------------------------------ -->
+          <section id="view-optica" class="app-view">
+            <div class="view-header-block">
+              <div class="row-between">
+                <h2>GPL Visión • Óptica</h2>
+                <span id="opticaCarenciaBadge" class="status-pill-ok">Habilitado (2/2 cuotas)</span>
+              </div>
+              <p>Cobertura 100% en Lentes y Armazones recetados (Graduación hasta +10/-10 • Tope $127.500 • 1 evento al año).</p>
+            </div>
+
+            <!-- Tracker del Lente -->
+            <div class="lens-tracker-box">
+              <div class="tracker-box-header">
+                <div>
+                  <span class="sub-label">SEGUIMIENTO DE TU LENTE</span>
+                  <h3>Armazón Milano Noir + Cristales Antirreflex</h3>
+                </div>
+                <span class="order-code">#OPT-884</span>
+              </div>
+
+              <div class="stepper-vertical" id="opticaStepper">
+                <div class="step-item done">
+                  <div class="step-circle"><i data-lucide="check"></i></div>
+                  <div class="step-text">
+                    <strong>1. Selección de armazón y receta médica</strong>
+                    <span>Receta validada (+1.75 / +1.50)</span>
+                  </div>
+                </div>
+                <div class="step-item done">
+                  <div class="step-circle"><i data-lucide="check"></i></div>
+                  <div class="step-text">
+                    <strong>2. En laboratorio óptico</strong>
+                    <span>Tallado y calibrado de cristales finalizado</span>
+                  </div>
+                </div>
+                <div class="step-item current">
+                  <div class="step-circle"><i data-lucide="package-check"></i></div>
+                  <div class="step-text">
+                    <strong>3. ¡Ya está tu lente listo para retirar en sucursal!</strong>
+                    <span>Disponible en Sucursal GPL Centro (Lun a Vie 9 a 18 hs)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Catálogo de Selección de Lentes -->
+            <div class="section-title-row">
+              <h3>Catálogo de Lentes para Óptica</h3>
+            </div>
+
+            <div class="catalog-filters">
+              <button class="cat-chip active" onclick="filterCatalog('todos', this)">Todos</button>
+              <button class="cat-chip" onclick="filterCatalog('recetados', this)">Recetados</button>
+              <button class="cat-chip" onclick="filterCatalog('filtroazul', this)">Filtro Luz Azul</button>
+              <button class="cat-chip" onclick="filterCatalog('bifocal', this)">Multifocal / Orgánico</button>
+            </div>
+
+            <div id="catalogGrid" class="catalog-grid">
+              <!-- Poblado por JS -->
+            </div>
+          </section>
+
+          <!-- ------------------------------------------
+               VISTA: PAGOS E HISTORIAL DE CUOTAS
+               ------------------------------------------ -->
+          <section id="view-pagos" class="app-view">
+            <div class="view-header-block">
+              <h2>Pagos e Historial</h2>
+              <p>Comprobá que se te debitó tu cuota para no perder los servicios y calcular la habilitación por carencias.</p>
+            </div>
+
+            <!-- Resumen Plan Flex del Grupo Familiar -->
+            <div class="billing-summary-card">
+              <div class="billing-row">
+                <span>Titular (18 a 75 años)</span>
+                <strong>$50.000</strong>
+              </div>
+              <div class="billing-row">
+                <span>1x Adherente 1 (14 a 75 años)</span>
+                <strong>$40.000</strong>
+              </div>
+              <div class="billing-row">
+                <span>1x Adherente 2 (Menor a 14 / Mayor a 75)</span>
+                <strong>$30.000</strong>
+              </div>
+              <div class="billing-divider"></div>
+              <div class="billing-total">
+                <div>
+                  <span>Total Mensual Plan Flex</span>
+                  <small>CBU Único Titular: •••• 4910 (BNA)</small>
+                </div>
+                <span class="total-amount">$120.000</span>
+              </div>
+            </div>
+
+            <!-- Opciones para Gestionar Pagos -->
+            <div class="section-title-row">
+              <h3>Gestionar Pagos</h3>
+            </div>
+
+            <div class="payment-methods-stack">
+              <!-- Opción 1: Botón de Pago MP con costo asumido -->
+              <div class="pay-option-card">
+                <div class="pay-option-top">
+                  <div class="pay-icon mp-bg"><i data-lucide="credit-card"></i></div>
+                  <div class="pay-option-text">
+                    <h4>Botón de Pago (Mercado Pago)</h4>
+                    <p>Con el costo financiero asumido de Mercado Pago. Acreditación inmediata.</p>
+                  </div>
+                </div>
+                <button class="btn-primary btn-block" onclick="openModal('modalPagoMP')">
+                  Abonar con Mercado Pago ($120.000 + costo MP)
+                </button>
+              </div>
+
+              <!-- Opción 2: Autogestión de DEBIN -->
+              <div class="pay-option-card">
+                <div class="pay-option-top">
+                  <div class="pay-icon teal-bg"><i data-lucide="landmark"></i></div>
+                  <div class="pay-option-text">
+                    <h4>Autogestionar mi DEBIN</h4>
+                    <p>Generá la solicitud DEBIN bancaria para aceptar el débito desde tu Home Banking.</p>
+                  </div>
+                </div>
+                <button class="btn-outline-teal btn-block" onclick="openModal('modalDebin')">
+                  Autogestionar DEBIN ($120.000)
+                </button>
+              </div>
+
+              <!-- Opción 3: Solicitar un cobro (sin costo) -->
+              <div class="pay-option-card">
+                <div class="pay-option-top">
+                  <div class="pay-icon green-bg"><i data-lucide="hand-coins"></i></div>
+                  <div class="pay-option-text">
+                    <h4>Solicitar un Cobro <span class="free-badge">SIN COSTO</span></h4>
+                    <p>Solicitá a GPL que procese el cobro de tu cuota sin recargo adicional.</p>
+                  </div>
+                </div>
+                <button class="btn-burgundy-outline btn-block" onclick="solicitarCobroSinCosto()">
+                  Solicitar un Cobro (Sin Costo)
+                </button>
+              </div>
+            </div>
+
+            <!-- Historial de Pagos para comprobar débito -->
+            <div class="section-title-row">
+              <h3>Historial de Pagos y Carencias</h3>
+            </div>
+            <div id="paymentHistoryList" class="history-list">
+              <!-- Poblado por JS -->
+            </div>
+          </section>
+
+          <!-- ------------------------------------------
+               VISTA: COMUNICACIÓN CON CAC Y PERFIL
+               ------------------------------------------ -->
+          <section id="view-cac" class="app-view">
+            <div class="view-header-block">
+              <h2>Comunicación con CAC</h2>
+              <p>Centro de Atención al Cliente: modificación de datos personales, adherentes y derivación al 0800.</p>
+            </div>
+
+            <!-- Derivación directa al 0800 -->
+            <div class="cac-0800-banner">
+              <div>
+                <span class="sub-label">DERIVACIÓN DIRECTA</span>
+                <h3>Atención Telefónica 0800</h3>
+                <p>Comunicate con un representante del CAC GPL</p>
+              </div>
+              <a href="tel:0800555475" class="btn-call-0800">
+                <i data-lucide="phone-forwarded"></i> Llamar 0800
+              </a>
+            </div>
+
+            <!-- Autogestión / Modificación de Datos Personales -->
+            <div class="section-title-row">
+              <h3>Modificación de Datos Personales</h3>
+            </div>
+
+            <div class="cac-actions-grid">
+              <button class="cac-action-item" onclick="openCacForm('telefono')">
+                <i data-lucide="smartphone"></i>
+                <div>
+                  <strong>Nro. de Teléfono y Correo</strong>
+                  <span>Actualizá tu celular o cambiá tu DNI de acceso por tu Email</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+              </button>
+
+              <button class="cac-action-item" onclick="openCacForm('domicilio')">
+                <i data-lucide="map-pin"></i>
+                <div>
+                  <strong>Domicilio</strong>
+                  <span>Modificación de calle, número, localidad o provincia</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+              </button>
+
+              <button class="cac-action-item" onclick="openCacForm('mediopago')">
+                <i data-lucide="credit-card"></i>
+                <div>
+                  <strong>Medio de Pago (CBU)</strong>
+                  <span>Cada plan corresponde a un único CBU del titular de la solicitud</span>
+                </div>
+                <i data-lucide="chevron-right"></i>
+              </button>
+            </div>
+
+            <!-- Gestión de Adherentes (Plan Flex) -->
+            <div class="section-title-row">
+              <h3>Agregar, Modificar o Quitar Adherentes</h3>
+              <button class="btn-burgundy-sm" onclick="openCacForm('adherente')">
+                <i data-lucide="user-plus" class="icon-xs"></i> Agregar
+              </button>
+            </div>
+            <p class="helper-note">Plan Flex: Sin límite de Adherentes 1 ($40.000 • 14 a 75 años) ni Adherentes 2 ($30.000 • Menores a 14 y mayores a 75 años).</p>
+
+            <div id="adherentesList" class="adherentes-list">
+              <!-- Poblado por JS -->
+            </div>
+
+            <!-- Cambiar de usuario de prueba o Cerrar sesión -->
+            <button class="btn-logout" onclick="logoutApp()">
+              <i data-lucide="log-out"></i> Cerrar sesión / Cambiar usuario de prueba
+            </button>
+          </section>
+
+          <!-- ------------------------------------------
+               VISTA: CENTRO DE NOTIFICACIONES
+               ------------------------------------------ -->
+          <section id="view-notificaciones" class="app-view">
+            <div class="view-header-block">
+              <div class="row-between">
+                <h2>Notificaciones</h2>
+                <button class="text-link" onclick="markAllRead()">Marcar leídas</button>
+              </div>
+              <p>Falta de pagos, nuevos servicios, promociones (referidos, fechas especiales) y seguimiento de tu lente.</p>
+            </div>
+
+            <div id="notificationsList" class="notif-list">
+              <!-- Poblado por JS -->
+            </div>
+          </section>
+
+        </main>
+
+        <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+        <nav class="bottom-nav">
+          <button class="nav-item active" data-target="home" onclick="navigateTo('home')">
+            <i data-lucide="home"></i>
+            <span>Inicio</span>
+          </button>
+          <button class="nav-item" data-target="servicios" onclick="navigateTo('servicios')">
+            <i data-lucide="heart-pulse"></i>
+            <span>Servicios</span>
+          </button>
+          <button class="nav-item" data-target="optica" onclick="navigateTo('optica')">
+            <i data-lucide="glasses"></i>
+            <span>Óptica</span>
+          </button>
+          <button class="nav-item" data-target="pagos" onclick="navigateTo('pagos')">
+            <i data-lucide="receipt"></i>
+            <span>Pagos</span>
+          </button>
+          <button class="nav-item" data-target="cac" onclick="navigateTo('cac')">
+            <i data-lucide="user-cog"></i>
+            <span>CAC / Perfil</span>
+          </button>
+        </nav>
+
+      </div>
+
+      <!-- ==========================================
+           MODALES INTERACTIVOS
+           ========================================== -->
+
+      <!-- Modal: Cambiar Rápido de Usuario Demo sin salir -->
+      <div id="modalCambiarUsuario" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3>Cambiar Usuario de Prueba</h3>
+            <button class="close-btn" onclick="closeModal('modalCambiarUsuario')"><i data-lucide="x"></i></button>
+          </div>
+          <p class="modal-desc">Elegí con qué escenario de cuotas querés ver la aplicación en el celular:</p>
+          <div class="demo-users-grid" style="margin-bottom:12px">
+            <button type="button" class="demo-user-chip chip-danger" onclick="quickLoginUser('sincuota'); closeModal('modalCambiarUsuario')">
+              <strong>sincuota</strong>
+              <span>0 cuotas • Falta de pago</span>
+            </button>
+            <button type="button" class="demo-user-chip" onclick="quickLoginUser('cuota1'); closeModal('modalCambiarUsuario')">
+              <strong>cuota1</strong>
+              <span>1 cuota • Telemed + AP</span>
+            </button>
+            <button type="button" class="demo-user-chip" onclick="quickLoginUser('cuota2'); closeModal('modalCambiarUsuario')">
+              <strong>cuota2</strong>
+              <span>2 cuotas • Med + Óptica</span>
+            </button>
+            <button type="button" class="demo-user-chip" onclick="quickLoginUser('cuota3'); closeModal('modalCambiarUsuario')">
+              <strong>cuota3</strong>
+              <span>3 cuotas • Alta Complejidad</span>
+            </button>
+            <button type="button" class="demo-user-chip chip-full" onclick="quickLoginUser('cuota6'); closeModal('modalCambiarUsuario')">
+              <strong>cuota6</strong>
+              <span>6 cuotas • Cobertura Total + AEF</span>
+            </button>
+          </div>
+          <button class="btn-outline-teal btn-block" onclick="closeModal('modalCambiarUsuario'); logoutApp();">
+            Volver a la pantalla de Inicio de Sesión
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal: Vincular / Cambiar DNI por Email -->
+      <div id="modalVincularMail" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3>Cambiar DNI por mi Email</h3>
+            <button class="close-btn" onclick="closeModal('modalVincularMail')"><i data-lucide="x"></i></button>
+          </div>
+          <p class="modal-desc">Podés elegir cambiar tu DNI de acceso por tu correo electrónico. Así ingresás más fácil y registramos tu contacto en GPL para enviarte comprobantes y alertas.</p>
+          <form onsubmit="saveUserEmail(event)">
+            <div class="form-group">
+              <label>DNI del Titular</label>
+              <input type="text" id="modalDniReadonly" value="34.892.104" disabled class="input-disabled" />
+            </div>
+            <div class="form-group">
+              <label>Tu Correo Electrónico</label>
+              <input type="email" id="newEmailInput" placeholder="ejemplo@correo.com" required />
+            </div>
+            <button type="submit" class="btn-primary btn-block">Guardar mi Email y Vincular</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal: Telemedicina Externa / Teléfono -->
+      <div id="modalTelemedicina" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3>Telemedicina GPL</h3>
+            <button class="close-btn" onclick="closeModal('modalTelemedicina')"><i data-lucide="x"></i></button>
+          </div>
+          <div class="telemed-modal-status" id="telemedModalStatus">
+            ✅ <strong>Servicio Habilitado</strong> (Carencia: 1 cuota paga • SIN LÍMITE)
+          </div>
+          <p class="modal-desc">Gestioná tus servicios de Telemedicina desde la app a través de la plataforma externa o línea telefónica:</p>
+          
+          <div class="telemed-options-list">
+            <a href="https://www.grupoprolider.com.ar" target="_blank" class="telemed-opt-card">
+              <div class="telemed-opt-icon"><i data-lucide="monitor-smartphone"></i></div>
+              <div>
+                <strong>Ingresar a Plataforma de Telemedicina</strong>
+                <span>Guardia 24 hs (Clínica Adultos - Pediatría) y Atención Programada</span>
+              </div>
+              <i data-lucide="external-link"></i>
+            </a>
+
+            <a href="tel:0800555475" class="telemed-opt-card">
+              <div class="telemed-opt-icon burgundy"><i data-lucide="phone-call"></i></div>
+              <div>
+                <strong>Llamar al Número de Telemedicina</strong>
+                <span>Enlace telefónico directo para gestión de guardia o turnos</span>
+              </div>
+              <i data-lucide="chevron-right"></i>
+            </a>
+          </div>
+
+          <div class="specialties-box">
+            <strong>13 Especialidades en Atención Programada:</strong>
+            <div class="spec-tags">
+              <span>Clínica Adultos</span><span>Pediatría</span><span>Dermatología</span>
+              <span>Gastroenterología</span><span>Ginecología</span><span>Nutrición</span>
+              <span>Medicina de Familia</span><span>Oftalmología</span><span>Psicología</span>
+              <span>Psiquiatría</span><span>Salud Sexual</span><span>Tocoginecología</span>
+              <span>Traumatología</span><span>Cardiología</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Pago Mercado Pago (con costo asumido) -->
+      <div id="modalPagoMP" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3>Botón de Pago • Mercado Pago</h3>
+            <button class="close-btn" onclick="closeModal('modalPagoMP')"><i data-lucide="x"></i></button>
+          </div>
+          <p class="modal-desc">Aboná tu cuota al instante con el costo de gestión asumido de Mercado Pago.</p>
+          <div class="mp-breakdown">
+            <div class="mp-row">
+              <span>Cuota Mensual Plan Flex</span>
+              <strong>$120.000</strong>
+            </div>
+            <div class="mp-row fee">
+              <span>Costo financiero Mercado Pago (6,5%)</span>
+              <strong>$7.800</strong>
+            </div>
+            <div class="mp-total">
+              <span>Total a abonar</span>
+              <strong>$127.800</strong>
+            </div>
+          </div>
+          <button class="btn-primary btn-block" onclick="confirmarPagoDemo('Mercado Pago ($127.800)')">
+            Pagar con Mercado Pago
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal: Autogestión DEBIN -->
+      <div id="modalDebin" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3>Autogestión de DEBIN</h3>
+            <button class="close-btn" onclick="closeModal('modalDebin')"><i data-lucide="x"></i></button>
+          </div>
+          <p class="modal-desc">Generá la orden DEBIN hacia el CBU único del titular del Plan GPL sin recargo.</p>
+          <div class="mp-breakdown">
+            <div class="mp-row">
+              <span>CBU Destino</span>
+              <strong>BNA •••• 4910</strong>
+            </div>
+            <div class="mp-row">
+              <span>Importe de la cuota</span>
+              <strong>$120.000</strong>
+            </div>
+          </div>
+          <button class="btn-primary btn-block" onclick="confirmarPagoDemo('DEBIN Bancario ($120.000)')">
+            Generar mi DEBIN Ahora
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal: Formulario CAC (Datos / Adherentes) -->
+      <div id="modalCacForm" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3 id="cacModalTitle">Modificar Datos</h3>
+            <button class="close-btn" onclick="closeModal('modalCacForm')"><i data-lucide="x"></i></button>
+          </div>
+          <div id="cacModalBody"></div>
+        </div>
+      </div>
+
+      <!-- Modal: Valoración de Venta y Servicio -->
+      <div id="modalValoracion" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3>Valoración de Atención y Servicio</h3>
+            <button class="close-btn" onclick="closeModal('modalValoracion')"><i data-lucide="x"></i></button>
+          </div>
+          <form onsubmit="submitValoracion(event)">
+            <div class="rating-block">
+              <label>1. Puntuación sobre la venta y asesoramiento inicial:</label>
+              <div class="stars-row" data-group="venta">
+                <button type="button" class="star-btn active" onclick="setStars('venta', 1)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('venta', 2)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('venta', 3)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('venta', 4)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('venta', 5)">★</button>
+              </div>
+            </div>
+            <div class="rating-block">
+              <label>2. Apreciación del servicio médico, óptica y atención ofrecida:</label>
+              <div class="stars-row" data-group="servicio">
+                <button type="button" class="star-btn active" onclick="setStars('servicio', 1)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('servicio', 2)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('servicio', 3)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('servicio', 4)">★</button>
+                <button type="button" class="star-btn active" onclick="setStars('servicio', 5)">★</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Tu comentario para Grupo Pro Líder</label>
+              <textarea rows="3" placeholder="Contanos tu experiencia..."></textarea>
+            </div>
+            <button type="submit" class="btn-primary btn-block">Enviar Valoración</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Toast de confirmación -->
+      <div id="toastMsg" class="toast hidden"></div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
