@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#093642" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="GPL Clientes" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="LOGO-gpl.png" />
-  <link rel="icon" type="image/png" href="LOGO-gpl.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
   <title>App Clientes GPL — Grupo Pro Líder</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -145,9 +146,21 @@
             </div>
           </div>
 
+          <!-- BOTÓN INSTALAR APP EN EL TELÉFONO (PWA SIN BORDES DE GOOGLE) -->
+          <button type="button" id="btnInstallPwaLogin" class="pwa-install-banner" onclick="triggerInstallPWA()">
+            <div class="pwa-install-left">
+              <img src="icon-192.png" alt="App GPL" />
+              <div>
+                <strong>📲 Instalar App GPL en tu celular</strong>
+                <span>Abre directo desde tu pantalla sin barras de Google</span>
+              </div>
+            </div>
+            <span class="pwa-install-cta">Instalar</span>
+          </button>
+
           <div class="login-quick-help">
             <span>¿Necesitás asistencia del CAC?</span>
-            <a href="tel:0800555475" class="help-pill"><i data-lucide="phone-call"></i> Llamar al 0800 GPL</a>
+            <a href="tel:08002208400" class="help-pill"><i data-lucide="phone-call"></i> 0800-220-8400</a>
           </div>
         </div>
       </section>
@@ -167,6 +180,9 @@
             </div>
           </div>
           <div class="header-actions">
+            <button class="icon-btn pwa-header-btn" id="btnInstallPwaHeader" onclick="triggerInstallPWA()" title="Instalar App en el celular">
+              <i data-lucide="download"></i>
+            </button>
             <button class="icon-btn" onclick="openModal('modalCambiarUsuario')" title="Cambiar usuario de prueba">
               <i data-lucide="repeat"></i>
             </button>
@@ -229,8 +245,8 @@
                 <button class="btn-telemed-primary" onclick="openModal('modalTelemedicina')">
                   <i data-lucide="external-link"></i> Plataforma Médica
                 </button>
-                <a href="tel:0800555475" class="btn-telemed-phone">
-                  <i data-lucide="phone"></i> Línea Telemedicina
+                <a href="tel:08002208400" class="btn-telemed-phone">
+                  <i data-lucide="phone"></i> 0800-220-8400
                 </a>
               </div>
             </div>
@@ -292,21 +308,21 @@
             <div class="social-card">
               <h4>Redes y Canales de Grupo Pro Líder</h4>
               <div class="social-links-grid">
-                <a href="https://www.grupoprolider.com.ar" target="_blank" class="social-item">
+                <a href="https://www.grupoprolider.com.ar" target="_blank" rel="noopener noreferrer" class="social-item">
                   <i data-lucide="globe"></i>
                   <span>Web GPL</span>
                 </a>
-                <a href="https://www.grupoprolider.com.ar" target="_blank" class="social-item">
+                <a href="https://www.instagram.com/gplprolider" target="_blank" rel="noopener noreferrer" class="social-item">
                   <i data-lucide="instagram"></i>
                   <span>Instagram</span>
                 </a>
-                <a href="https://www.grupoprolider.com.ar" target="_blank" class="social-item">
+                <a href="https://www.facebook.com/gplprolider" target="_blank" rel="noopener noreferrer" class="social-item">
                   <i data-lucide="facebook"></i>
                   <span>Facebook</span>
                 </a>
-                <a href="tel:0800555475" class="social-item">
+                <a href="tel:08002208400" class="social-item">
                   <i data-lucide="headphones"></i>
-                  <span>0800 CAC</span>
+                  <span>0800-220-8400</span>
                 </a>
               </div>
             </div>
@@ -515,10 +531,10 @@
             <div class="cac-0800-banner">
               <div>
                 <span class="sub-label">DERIVACIÓN DIRECTA</span>
-                <h3>Atención Telefónica 0800</h3>
-                <p>Comunicate con un representante del CAC GPL</p>
+                <h3>0800-220-8400</h3>
+                <p>Comunicate con el Centro de Atención al Cliente GPL</p>
               </div>
-              <a href="tel:0800555475" class="btn-call-0800">
+              <a href="tel:08002208400" class="btn-call-0800">
                 <i data-lucide="phone-forwarded"></i> Llamar 0800
               </a>
             </div>
@@ -714,10 +730,10 @@
               <i data-lucide="external-link"></i>
             </a>
 
-            <a href="tel:0800555475" class="telemed-opt-card">
+            <a href="tel:08002208400" class="telemed-opt-card">
               <div class="telemed-opt-icon burgundy"><i data-lucide="phone-call"></i></div>
               <div>
-                <strong>Llamar al Número de Telemedicina</strong>
+                <strong>Llamar al 0800-220-8400</strong>
                 <span>Enlace telefónico directo para gestión de guardia o turnos</span>
               </div>
               <i data-lucide="chevron-right"></i>
@@ -892,6 +908,41 @@
             </div>
             <button type="submit" class="btn-primary btn-block">Enviar Valoración</button>
           </form>
+        </div>
+      </div>
+
+      <!-- Modal: Instrucciones para Instalar PWA en el Teléfono (Sin bordes de navegador) -->
+      <div id="modalInstallPWA" class="modal-overlay hidden">
+        <div class="modal-sheet">
+          <div class="modal-header">
+            <h3>📲 Instalar App Clientes GPL</h3>
+            <button class="close-btn" onclick="closeModal('modalInstallPWA')"><i data-lucide="x"></i></button>
+          </div>
+          <p class="modal-desc">Instalala en la pantalla principal de tu teléfono para que abra como una <strong>aplicación nativa a pantalla completa (sin la barra ni los bordes de Google Chrome / Safari)</strong>:</p>
+          
+          <div class="pwa-guide-cards">
+            <div class="pwa-guide-card">
+              <strong>🤖 En Android (Google Chrome):</strong>
+              <ol>
+                <li>Tocá el menú de <strong>3 puntitos (⋮)</strong> arriba a la derecha en Chrome.</li>
+                <li>Elegí <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</li>
+                <li>Confirmá tocando <strong>Instalar</strong> y abrila desde el ícono <strong>GPL Clientes</strong> en tu celular.</li>
+              </ol>
+            </div>
+
+            <div class="pwa-guide-card">
+              <strong>🍎 En iPhone (Safari):</strong>
+              <ol>
+                <li>Tocá el botón <strong>Compartir (cuadrado con flecha hacia arriba)</strong> en la barra inferior.</li>
+                <li>Deslizá y tocá <strong>"Agregar a Inicio"</strong>.</li>
+                <li>Tocá <strong>Agregar</strong> arriba a la derecha y abrila desde su ícono en tu iPhone.</li>
+              </ol>
+            </div>
+          </div>
+
+          <button type="button" class="btn-primary btn-block" onclick="closeModal('modalInstallPWA')">
+            ¡Entendido!
+          </button>
         </div>
       </div>
 

@@ -482,6 +482,100 @@ h1, h2, h3, h4 {
   height: 14px;
 }
 
+/* BANNER Y MODAL DE INSTALACIÓN PWA (APP SIN BORDES DE NAVEGADOR) */
+.pwa-install-banner {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid var(--white);
+  border-radius: 16px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  text-align: left;
+}
+
+.pwa-install-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pwa-install-left img {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pwa-install-left strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--gpl-teal);
+}
+
+.pwa-install-left span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.pwa-install-cta {
+  background: var(--gpl-burgundy);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.pwa-header-btn {
+  background: var(--gpl-burgundy-light);
+  color: var(--gpl-burgundy);
+  border-color: #f5d0e6;
+}
+
+.pwa-guide-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.pwa-guide-card {
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.pwa-guide-card strong {
+  font-size: 13px;
+  color: var(--gpl-teal);
+}
+
+.pwa-guide-card ol {
+  margin-top: 6px;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+/* Si la app ya está corriendo instalada como PWA standalone, oculta los botones de instalar */
+@media all and (display-mode: standalone), all and (display-mode: fullscreen) {
+  #btnInstallPwaLogin,
+  #btnInstallPwaHeader {
+    display: none !important;
+  }
+}
+
 .login-quick-help {
   text-align: center;
   color: #fff;

@@ -1,18 +1,40 @@
 {
+  "id": "./index.html",
   "name": "App Clientes GPL — Grupo Pro Líder",
   "short_name": "GPL Clientes",
-  "description": "Portal móvil de autogestión de clientes de Grupo Pro Líder: servicios activos, carencias, telemedicina, óptica y pagos.",
+  "description": "Portal oficial de autogestión de clientes de Grupo Pro Líder: servicios activos, carencias, telemedicina 24hs, óptica y gestión de pagos.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
   "orientation": "portrait",
   "background_color": "#093642",
   "theme_color": "#093642",
+  "lang": "es-AR",
   "icons": [
     {
-      "src": "LOGO-gpl.png",
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

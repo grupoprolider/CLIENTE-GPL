@@ -329,9 +329,42 @@ const CATALOGO_OPTICA = [
 ];
 
 // ==============================================================
-// INICIALIZACIÓN
+// INICIALIZACIÓN Y REGISTRO DE PWA (SERVICE WORKER + INSTALACIÓN)
 // ==============================================================
+let deferredPwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPwaPrompt = null;
+  const loginBtn = document.getElementById('btnInstallPwaLogin');
+  const headerBtn = document.getElementById('btnInstallPwaHeader');
+  if (loginBtn) loginBtn.classList.add('hidden');
+  if (headerBtn) headerBtn.classList.add('hidden');
+  showToast('🎉 ¡App Clientes GPL instalada en tu teléfono!');
+});
+
+function triggerInstallPWA() {
+  if (deferredPwaPrompt) {
+    deferredPwaPrompt.prompt();
+    deferredPwaPrompt.userChoice.then((choice) => {
+      if (choice.outcome === 'accepted') {
+        showToast('📲 Instalando App Clientes GPL...');
+      }
+      deferredPwaPrompt = null;
+    });
+  } else {
+    openModal('modalInstallPWA');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
   lucide.createIcons();
   renderAllDynamicViews();
 });
