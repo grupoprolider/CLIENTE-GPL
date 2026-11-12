@@ -42,9 +42,10 @@
         </div>
         <div class="push-content">
           <div class="push-header">
-            <strong id="pushTitle">GPL Visión • Ahora</strong>
+            <strong id="pushTitle">GPL Cobranzas • Ahora</strong>
+            <span class="push-cta-pill" id="pushCtaPill">Ir a Pagar →</span>
           </div>
-          <p id="pushText">👓 ¡Tu lente recetado ya está listo para retirar en Sucursal Centro!</p>
+          <p id="pushText">💳 Recordatorio de pago: Aboná tu cuota mensual para mantener tus servicios activos y sumar carencia.</p>
         </div>
       </div>
 
@@ -216,7 +217,8 @@
               <div class="status-card-actions">
                 <button class="btn-light-sm" onclick="navigateTo('servicios')">Ver mis carencias</button>
                 <button class="btn-light-sm" onclick="navigateTo('pagos')">Comprobantes</button>
-                <button class="btn-light-sm" onclick="triggerPushDemo()">🔔 Probar Push</button>
+                <button class="btn-light-sm" onclick="triggerPushDemo('pago')">🔔 Push Pagar Cuota</button>
+                <button class="btn-light-sm" onclick="triggerPushDemo('lente')">👓 Push Lente Listo</button>
               </div>
             </div>
 

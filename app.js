@@ -113,6 +113,18 @@ const state = {
   },
   notificacionesBase: [
     {
+      id: 100,
+      tipo: 'pago de cuota',
+      titulo: '💳 Recordatorio: Aboná tu cuota mensual del Plan Flex',
+      mensaje: 'Pagá tu cuota desde la app con Botón de Mercado Pago, autogestión de DEBIN o solicitando un cobro sin costo para mantener tus servicios activos y sumar antigüedad de carencia.',
+      fecha: 'Ahora',
+      unread: true,
+      icon: 'credit-card',
+      color: '#ef4444',
+      actionTarget: 'pagos',
+      actionLabel: 'Ir a Pagar Cuota →'
+    },
+    {
       id: 101,
       tipo: 'optica',
       titulo: '¡Ya está tu lente listo para retirar en sucursal!',
@@ -120,7 +132,9 @@ const state = {
       fecha: 'Hace 15 min',
       unread: true,
       icon: 'glasses',
-      color: '#10b981'
+      color: '#10b981',
+      actionTarget: 'optica',
+      actionLabel: 'Ver Seguimiento Óptica →'
     },
     {
       id: 102,
@@ -534,6 +548,7 @@ function quickLoginUser(userKey) {
 
   if (perfil.cuotas === 0) {
     showToast(`⚠️ Ingresaste como "${userKey}" (Sin cuota al día)`);
+    setTimeout(() => triggerPushDemo('pago'), 700);
   } else {
     showToast(`✅ Ingresaste como "${userKey}" (${perfil.cuotas} ${perfil.cuotas === 1 ? 'cuota paga' : 'cuotas pagas'})`);
   }
@@ -564,6 +579,9 @@ function handleLogin(e) {
   document.getElementById('app-shell').classList.remove('hidden');
 
   renderAllDynamicViews();
+  if (state.cuotasPagas === 0) {
+    setTimeout(() => triggerPushDemo('pago'), 700);
+  }
 }
 
 function saveUserEmail(e) {
@@ -1162,11 +1180,23 @@ function agregarAdherenteDemo(e) {
 }
 
 // ==============================================================
-// NOTIFICACIONES Y PUSH DEMO
+// NOTIFICACIONES Y PUSH DEMO (AMBOS: PUSH FLOTANTE + NOTIFICACIÓN EN CAMPANITA)
 // ==============================================================
 function getActiveNotifications() {
+  const importe = formatARS(getCuotaTotalMensual());
+  // Actualiza el monto dinámico en la notificación de pago de cuota
+  const base = state.notificacionesBase.map(n => {
+    if (n.id === 100) {
+      return {
+        ...n,
+        titulo: `💳 Recordatorio: Aboná tu cuota mensual (${importe})`,
+        mensaje: `Pagá tu cuota de ${importe} desde la app con Botón de Mercado Pago, autogestión de DEBIN o solicitando un cobro sin costo para mantener tus servicios activos y sumar antigüedad de carencia.`
+      };
+    }
+    return n;
+  });
   const extras = (state.perfilActual && state.perfilActual.notificacionesExtra) || [];
-  return [...extras, ...state.notificacionesBase];
+  return [...extras, ...base];
 }
 
 function renderNotifications() {
@@ -1181,21 +1211,27 @@ function renderNotifications() {
     badge.classList.toggle('hidden', unreadCount === 0);
   }
 
-  listEl.innerHTML = allNotifs.map(n => `
-    <div class="notif-card ${n.unread ? 'unread' : ''}">
-      <div class="notif-type-icon" style="background:${n.color}18; color:${n.color}">
-        <i data-lucide="${n.icon}"></i>
-      </div>
-      <div class="notif-body">
-        <div class="notif-body-top">
-          <strong>${n.tipo.toUpperCase()}</strong>
-          <span>${n.fecha}</span>
+  listEl.innerHTML = allNotifs.map(n => {
+    const actionBtnHtml = n.actionTarget
+      ? `<button type="button" class="notif-action-btn" onclick="navigateTo('${n.actionTarget}')">${n.actionLabel || 'Ver detalle →'}</button>`
+      : '';
+    return `
+      <div class="notif-card ${n.unread ? 'unread' : ''}">
+        <div class="notif-type-icon" style="background:${n.color}18; color:${n.color}">
+          <i data-lucide="${n.icon}"></i>
         </div>
-        <h4>${n.titulo}</h4>
-        <p>${n.mensaje}</p>
+        <div class="notif-body">
+          <div class="notif-body-top">
+            <strong>${n.tipo.toUpperCase()}</strong>
+            <span>${n.fecha}</span>
+          </div>
+          <h4>${n.titulo}</h4>
+          <p>${n.mensaje}</p>
+          ${actionBtnHtml}
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
   lucide.createIcons();
 }
 
@@ -1208,29 +1244,93 @@ function markAllRead() {
   showToast('Notificaciones marcadas como leídas.');
 }
 
-function triggerPushDemo() {
+let currentPushTarget = 'pagos';
+
+async function sendNativePushIfGranted(title, body, targetView) {
+  try {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+    if (Notification.permission === 'granted') {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg && reg.showNotification) {
+          reg.showNotification(title, {
+            body,
+            icon: 'icon-192.png',
+            badge: 'icon-192.png',
+            vibrate: [200, 100, 200],
+            data: { target: targetView }
+          });
+          return;
+        }
+      }
+      new Notification(title, { body, icon: 'icon-192.png' });
+    }
+  } catch (e) {
+    // Fallback silencioso al banner visual en pantalla
+  }
+}
+
+function triggerPushDemo(tipo = 'pago') {
   const banner = document.getElementById('pushBanner');
   const titleEl = document.getElementById('pushTitle');
   const textEl = document.getElementById('pushText');
+  const ctaEl = document.getElementById('pushCtaPill');
+  const importe = formatARS(getCuotaTotalMensual());
 
-  if (state.cuotasPagas === 0) {
-    titleEl.textContent = 'GPL Cobranzas • Ahora';
-    textEl.textContent = '⚠️ Falta de pago: Regularizá tu cuota desde la app para mantener tus servicios activos.';
-  } else {
+  if (tipo === 'lente') {
+    currentPushTarget = 'optica';
     titleEl.textContent = 'GPL Visión • Ahora';
     textEl.textContent = '👓 ¡Ya está tu lente listo para retirar en Sucursal GPL Centro!';
+    if (ctaEl) ctaEl.textContent = 'Ver Óptica →';
+
+    // Marca o sube la notificación en la campanita como recién llegada
+    const optNotif = state.notificacionesBase.find(n => n.id === 101);
+    if (optNotif) {
+      optNotif.unread = true;
+      optNotif.fecha = 'Justo ahora';
+    }
+    renderNotifications();
+
+    sendNativePushIfGranted(
+      'GPL Visión • Lente listo',
+      '👓 ¡Ya está tu lente recetado listo para retirar en sucursal!',
+      'optica'
+    );
+  } else {
+    currentPushTarget = 'pagos';
+    titleEl.textContent = 'GPL Cobranzas • Ahora';
+    textEl.textContent = `💳 ¡Aboná tu cuota mensual (${importe})! Tocá aquí para pagar desde la app y mantener tus servicios activos.`;
+    if (ctaEl) ctaEl.textContent = 'Pagar Cuota →';
+
+    // Marca la notificación de pago en la campanita como recién llegada ("Justo ahora")
+    const payNotif = state.notificacionesBase.find(n => n.id === 100);
+    if (payNotif) {
+      payNotif.unread = true;
+      payNotif.fecha = 'Justo ahora';
+    }
+    renderNotifications();
+
+    sendNativePushIfGranted(
+      `GPL • Recordatorio de Pago (${importe})`,
+      '💳 Aboná tu cuota mensual desde la app para mantener tus servicios activos y no perder tus carencias.',
+      'pagos'
+    );
   }
 
   banner.classList.remove('hidden');
-  setTimeout(() => {
+  clearTimeout(window.__pushTimer);
+  window.__pushTimer = setTimeout(() => {
     banner.classList.add('hidden');
-  }, 5000);
+  }, 6500);
 }
 
 function openNotificationFromPush() {
   document.getElementById('pushBanner').classList.add('hidden');
   if (!document.getElementById('app-shell').classList.contains('hidden')) {
-    navigateTo(state.cuotasPagas === 0 ? 'pagos' : 'optica');
+    navigateTo(currentPushTarget || 'pagos');
   }
 }
 
