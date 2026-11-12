@@ -113,6 +113,18 @@ const state = {
   },
   notificacionesBase: [
     {
+      id: 99,
+      tipo: 'confirmación de pago',
+      titulo: '✅ ¡Pago de cuota confirmado y acreditado!',
+      mensaje: 'Comprobamos que se debitó tu cuota mensual correctamente. Tus servicios continúan activos y sumaste antigüedad para tus carencias.',
+      fecha: 'Hoy',
+      unread: true,
+      icon: 'check-circle-2',
+      color: '#10b981',
+      actionTarget: 'pagos',
+      actionLabel: 'Ver Comprobante e Historial →'
+    },
+    {
       id: 100,
       tipo: 'pago de cuota',
       titulo: '💳 Recordatorio: Aboná tu cuota mensual del Plan Flex',
@@ -946,13 +958,30 @@ function confirmarPagoDemo(metodo) {
   const importe = metodo.includes('Mercado Pago')
     ? formatARS(total + Math.round(total * 0.065))
     : formatARS(total);
+
+  // Suma 1 cuota paga, reactiva los servicios y recalcula las carencias
   state.cuotasPagas += 1;
   renderAllDynamicViews();
-  showToast(`✅ Pago de ${importe} acreditado vía ${metodo}. ¡Ahora tenés ${state.cuotasPagas} cuota(s)!`);
+
+  // Dispara el Push de Confirmación de Pago + agrega la notificación en la campanita
+  setTimeout(() => {
+    triggerPushDemo('confirmacion', `${metodo} (${importe})`);
+  }, 350);
+
+  showToast(`✅ Pago de ${importe} acreditado vía ${metodo}. ¡Servicios activos (${state.cuotasPagas} ${state.cuotasPagas === 1 ? 'cuota' : 'cuotas'})!`);
 }
 
 function solicitarCobroSinCosto() {
-  showToast(`📩 Solicitud de cobro SIN COSTO por ${formatARS(getCuotaTotalMensual())} enviada a Cobranzas GPL.`);
+  const importe = formatARS(getCuotaTotalMensual());
+  // También permite simular el cobro procesado sin costo para completar el circuito
+  state.cuotasPagas += 1;
+  renderAllDynamicViews();
+
+  setTimeout(() => {
+    triggerPushDemo('confirmacion', `Cobro Directo Sin Costo (${importe})`);
+  }, 350);
+
+  showToast(`✅ Cobro SIN COSTO (${importe}) procesado. ¡Servicios activos (${state.cuotasPagas} ${state.cuotasPagas === 1 ? 'cuota' : 'cuotas'})!`);
 }
 
 // ==============================================================
@@ -1180,12 +1209,19 @@ function agregarAdherenteDemo(e) {
 }
 
 // ==============================================================
-// NOTIFICACIONES Y PUSH DEMO (AMBOS: PUSH FLOTANTE + NOTIFICACIÓN EN CAMPANITA)
+// NOTIFICACIONES Y PUSH DEMO (CIRCUITO COMPLETO: FALTA DE PAGO -> PAGAR -> CONFIRMACIÓN)
 // ==============================================================
 function getActiveNotifications() {
   const importe = formatARS(getCuotaTotalMensual());
-  // Actualiza el monto dinámico en la notificación de pago de cuota
+  // Actualiza los montos dinámicos en las notificaciones de pago
   const base = state.notificacionesBase.map(n => {
+    if (n.id === 99) {
+      return {
+        ...n,
+        titulo: n.customTitle || `✅ ¡Pago confirmado (${importe})! Servicios Activos`,
+        mensaje: n.customMsg || `Tu cuota mensual fue abonada correctamente. Ya tenés tus servicios activos (${state.cuotasPagas} ${state.cuotasPagas === 1 ? 'cuota paga' : 'cuotas pagas'}) y sumaste antigüedad de carencia.`
+      };
+    }
     if (n.id === 100) {
       return {
         ...n,
@@ -1273,20 +1309,61 @@ async function sendNativePushIfGranted(title, body, targetView) {
   }
 }
 
-function triggerPushDemo(tipo = 'pago') {
+function triggerPushDemo(tipo = 'pago', detalleMetodo = '') {
   const banner = document.getElementById('pushBanner');
   const titleEl = document.getElementById('pushTitle');
   const textEl = document.getElementById('pushText');
   const ctaEl = document.getElementById('pushCtaPill');
   const importe = formatARS(getCuotaTotalMensual());
 
-  if (tipo === 'lente') {
+  if (tipo === 'confirmacion') {
+    currentPushTarget = 'servicios';
+    banner.style.borderLeftColor = '#10b981';
+    titleEl.style.color = '#047857';
+    titleEl.textContent = 'GPL Cobranzas • Pago Acreditado';
+    const viaTxt = detalleMetodo ? ` vía ${detalleMetodo}` : ` (${importe})`;
+    textEl.textContent = `✅ ¡Se abonó correctamente tu cuota${viaTxt}! Ya tenés tus servicios activos (${state.cuotasPagas} ${state.cuotasPagas === 1 ? 'cuota paga' : 'cuotas pagas'}).`;
+    if (ctaEl) {
+      ctaEl.style.background = '#10b981';
+      ctaEl.textContent = 'Ver Servicios Activos →';
+    }
+
+    // Actualiza la notificación de confirmación en la campanita y la pone primera
+    const confNotif = state.notificacionesBase.find(n => n.id === 99);
+    if (confNotif) {
+      confNotif.unread = true;
+      confNotif.fecha = 'Justo ahora';
+      confNotif.customTitle = `✅ ¡Pago confirmado${viaTxt}! Ya tenés tus servicios activos`;
+      confNotif.customMsg = `Se registró tu pago correctamente. Tus servicios de GPL ya están activos (${state.cuotasPagas} ${state.cuotasPagas === 1 ? 'cuota paga' : 'cuotas pagas'} acreditadas para el cálculo de carencias).`;
+      confNotif.actionTarget = 'servicios';
+      confNotif.actionLabel = 'Ver mis Servicios Activos →';
+    }
+    // Marca como resuelto el aviso de falta de pago si venía de sincuota
+    const payNotif = state.notificacionesBase.find(n => n.id === 100);
+    if (payNotif) payNotif.unread = false;
+    if (state.perfilActual && state.perfilActual.notificacionesExtra) {
+      state.perfilActual.notificacionesExtra.forEach(n => {
+        if (n.tipo.includes('pago')) n.unread = false;
+      });
+    }
+    renderNotifications();
+
+    sendNativePushIfGranted(
+      '✅ GPL • ¡Pago Confirmado!',
+      `Se abonó correctamente tu cuota${viaTxt}. ¡Ya tenés tus servicios activos!`,
+      'servicios'
+    );
+  } else if (tipo === 'lente') {
     currentPushTarget = 'optica';
+    banner.style.borderLeftColor = '#73174E';
+    titleEl.style.color = '#73174E';
     titleEl.textContent = 'GPL Visión • Ahora';
     textEl.textContent = '👓 ¡Ya está tu lente listo para retirar en Sucursal GPL Centro!';
-    if (ctaEl) ctaEl.textContent = 'Ver Óptica →';
+    if (ctaEl) {
+      ctaEl.style.background = '#73174E';
+      ctaEl.textContent = 'Ver Óptica →';
+    }
 
-    // Marca o sube la notificación en la campanita como recién llegada
     const optNotif = state.notificacionesBase.find(n => n.id === 101);
     if (optNotif) {
       optNotif.unread = true;
@@ -1301,11 +1378,15 @@ function triggerPushDemo(tipo = 'pago') {
     );
   } else {
     currentPushTarget = 'pagos';
-    titleEl.textContent = 'GPL Cobranzas • Ahora';
-    textEl.textContent = `💳 ¡Aboná tu cuota mensual (${importe})! Tocá aquí para pagar desde la app y mantener tus servicios activos.`;
-    if (ctaEl) ctaEl.textContent = 'Pagar Cuota →';
+    banner.style.borderLeftColor = '#ef4444';
+    titleEl.style.color = '#b91c1c';
+    titleEl.textContent = 'GPL Cobranzas • Falta de Pago';
+    textEl.textContent = `💳 ¡Aboná tu cuota mensual (${importe})! Tocá aquí para ir a Pagos y mantener tus servicios activos.`;
+    if (ctaEl) {
+      ctaEl.style.background = '#73174E';
+      ctaEl.textContent = 'Ir a Abonar →';
+    }
 
-    // Marca la notificación de pago en la campanita como recién llegada ("Justo ahora")
     const payNotif = state.notificacionesBase.find(n => n.id === 100);
     if (payNotif) {
       payNotif.unread = true;
@@ -1324,7 +1405,7 @@ function triggerPushDemo(tipo = 'pago') {
   clearTimeout(window.__pushTimer);
   window.__pushTimer = setTimeout(() => {
     banner.classList.add('hidden');
-  }, 6500);
+  }, 7000);
 }
 
 function openNotificationFromPush() {

@@ -1,7 +1,7 @@
 // ==============================================================
 // SERVICE WORKER — APP CLIENTES GPL (PWA INSTALABLE SIN BORDES)
 // ==============================================================
-const CACHE_NAME = 'gpl-clientes-pwa-v5';
+const CACHE_NAME = 'gpl-clientes-pwa-v6';
 const ASSETS_TO_CACHE = [
   'index.html',
   'styles.css',
